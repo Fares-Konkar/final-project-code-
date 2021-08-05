@@ -1,0 +1,25 @@
+import slidingwindow as sw
+import numpy as np
+import cv2 
+# Load our input image here
+data = cv2.imread(r'D:\Desktop2\Test-Project\Image_alignemt\11.jpg')
+
+# Generate the set of windows, with a 256-pixel max window size and 50% overlap
+windows = sw.generate(data, sw.DimOrder.HeightWidthChannel, 64, 0)
+images = []
+# Do stuff with the generated windows
+for window in windows:
+	subset = data[ window.indices() ]
+	images.append(subset)
+
+
+Hori = np.concatenate((images[0], images[1], images[2]), axis=1)
+  
+# concatanate image Vertically
+# Verti = np.concatenate((images, images), axis=0)
+
+cv2.imshow("Window",images[3])
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+print(len(Hori))
