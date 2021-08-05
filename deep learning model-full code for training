@@ -1,0 +1,521 @@
+from skimage.io import imread_collection
+import numpy as np
+import cv2 
+
+!pip install slidingwindow
+
+import slidingwindow as sw
+
+from keras.models import Sequential
+from keras.layers.convolutional import Conv2D
+from keras.layers.convolutional import MaxPooling2D
+from keras.layers.core import Activation
+from keras.layers.core import Flatten , Dropout
+from keras.layers.normalization import BatchNormalization
+from keras.layers.core import Dense
+from keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import tensorflow as tf
+import cv2
+import keras 
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from PIL import Image
+from imutils import paths
+import numpy as np
+import argparse
+import os
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Input, Lambda, Dense, Flatten
+from tensorflow.keras.models import Model
+
+#file location of the images (orginal/new scene):
+col_dir1 = '/content/drive/MyDrive/bliz/input/*.jpg'
+col_depth_dir1 = '/content/drive/MyDrive/bliz/depth/*.png'
+
+#creating a collection with the available images\depth images:
+col1 = imread_collection(col_dir1)
+col_depth1 = imread_collection(col_depth_dir1,cv2.IMREAD_GRAYSCALE) # the image origanly has 3 chaneel so i removed the 2 channel, to be compared in the model.
+
+# For changeing the dimension of the images to 64x64 as tranining data:
+    
+# image 0 is the original scene, the slicing will be seperate:  
+images1_original1 =[]    
+windows = sw.generate(col1[0], sw.DimOrder.HeightWidthChannel, 64, 0)
+for window in windows:
+    subset = col1[0][ window.indices() ]
+    images1_original1.append(subset)   
+    
+# new scene
+images1 = []
+i = 1
+while i <= 1000:
+    windows = sw.generate(col1[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    for window in windows:
+        subset = col1[i][ window.indices() ]
+        images1.append(subset)
+    i+=1
+
+# For chnging the depth images to 4096 as testing data: 
+images1_depth1 = []
+i = 0
+while i <= 999:
+    windows = sw.generate(col_depth1[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    
+    for window in windows:
+        subset = col_depth1[i][ window.indices() ]
+        # binary = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)[1]
+        ravel= np.ravel(subset)
+        images1_depth1.append(ravel)
+    i+=1 
+    
+# Now to imerge original scene with the new scene:
+i =0
+j=0
+concation_of_images1 = []
+while j <= 95999:
+    
+    while i <= 95: # 96 is number of sliced images in each image.
+        imgs = np.concatenate((images1_original1[i], images1[j]), axis=2)
+        concation_of_images1.append(imgs)
+        i+=1
+        j+=1 
+
+    i=0
+    
+#file location of the images (orginal/new scene):
+col_dir2 = '/content/drive/MyDrive/skating/input/*.jpg'
+col_depth_dir2 = '/content/drive/MyDrive/skating/groundtruth/*.png'
+
+#creating a collection with the available images\depth images:
+col2 = imread_collection(col_dir2)
+col_depth2 = imread_collection(col_depth_dir2,cv2.IMREAD_GRAYSCALE) # the image origanly has 3 chaneel so i removed the 2 channel, to be compared in the model.
+
+# For changeing the dimension of the images to 64x64 as tranining data:
+    
+# image 0 is the original scene, the slicing will be seperate:  
+images1_original2 =[]    
+windows = sw.generate(col2[0], sw.DimOrder.HeightWidthChannel, 64, 0)
+for window in windows:
+    subset = col2[0][ window.indices() ]
+    images1_original2.append(subset)   
+    
+# new scene
+images2 = []
+i = 1
+while i <= 200:
+    windows = sw.generate(col2[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    for window in windows:
+        subset = col2[i][ window.indices() ]
+        images2.append(subset)
+    i+=1
+
+# For chnging the depth images to 4096 as testing data: 
+images1_depth2 = []
+i = 0
+while i <= 199:
+    windows = sw.generate(col_depth2[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    
+    for window in windows:
+        subset = col_depth2[i][ window.indices() ]
+        # binary = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)[1]
+        ravel= np.ravel(subset)
+        images1_depth2.append(ravel)
+    i+=1 
+
+# Now to imerge original scene with the new scene:
+i =0
+j=0
+concation_of_images2 = []
+while j <= 10799:
+    
+    while i <= 53: # 96 is number of sliced images in each image.
+        imgs = np.concatenate((images1_original2[i], images2[j]), axis=2)
+        concation_of_images2.append(imgs)
+        i+=1
+        j+=1 
+
+    i=0
+#file location of the images (orginal/new scene):
+col_dir3 = '/content/drive/MyDrive/snowFall/input/*.jpg'
+col_depth_dir3 = '/content/drive/MyDrive/snowFall/groundtruth/*.png'
+
+#creating a collection with the available images\depth images:
+col3 = imread_collection(col_dir3)
+col_depth3 = imread_collection(col_depth_dir3,cv2.IMREAD_GRAYSCALE) # the image origanly has 3 chaneel so i removed the 2 channel, to be compared in the model.
+
+# For changeing the dimension of the images to 64x64 as tranining data:
+    
+# image 0 is the original scene, the slicing will be seperate:  
+images1_original3 =[]    
+windows = sw.generate(col3[0], sw.DimOrder.HeightWidthChannel, 64, 0)
+for window in windows:
+    subset = col3[0][ window.indices() ]
+    images1_original3.append(subset)   
+    
+# new scene
+images3 = []
+i = 1
+while i <= 200:
+    windows = sw.generate(col3[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    for window in windows:
+        subset = col3[i][ window.indices() ]
+        images3.append(subset)
+    i+=1
+
+# For chnging the depth images to 4096 as testing data: 
+images1_depth3 = []
+i = 0
+while i <= 199:
+    windows = sw.generate(col_depth3[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    
+    for window in windows:
+        subset = col_depth3[i][ window.indices() ]
+        # binary = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)[1]
+        ravel= np.ravel(subset)
+        images1_depth3.append(ravel)
+    i+=1 
+
+# Now to imerge original scene with the new scene:
+i =0
+j=0
+concation_of_images3 = []
+while j <= 19199:
+    
+    while i <= 95: # 96 is number of sliced images in each image.
+        imgs = np.concatenate((images1_original3[i], images3[j]), axis=2)
+        concation_of_images3.append(imgs)
+        i+=1
+        j+=1 
+
+    i=0
+#file location of the images (orginal/new scene):
+col_dir3 = '/content/drive/MyDrive/snowFall/input/*.jpg'
+col_depth_dir3 = '/content/drive/MyDrive/snowFall/groundtruth/*.png'
+
+#creating a collection with the available images\depth images:
+col3 = imread_collection(col_dir3)
+col_depth3 = imread_collection(col_depth_dir3,cv2.IMREAD_GRAYSCALE) # the image origanly has 3 chaneel so i removed the 2 channel, to be compared in the model.
+
+# For changeing the dimension of the images to 64x64 as tranining data:
+    
+# image 0 is the original scene, the slicing will be seperate:  
+images1_original3 =[]    
+windows = sw.generate(col3[0], sw.DimOrder.HeightWidthChannel, 64, 0)
+for window in windows:
+    subset = col3[0][ window.indices() ]
+    images1_original3.append(subset)   
+    
+# new scene
+images3 = []
+i = 1
+while i <= 200:
+    windows = sw.generate(col3[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    for window in windows:
+        subset = col3[i][ window.indices() ]
+        images3.append(subset)
+    i+=1
+
+# For chnging the depth images to 4096 as testing data: 
+images1_depth3 = []
+i = 0
+while i <= 199:
+    windows = sw.generate(col_depth3[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    
+    for window in windows:
+        subset = col_depth3[i][ window.indices() ]
+        # binary = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)[1]
+        ravel= np.ravel(subset)
+        images1_depth3.append(ravel)
+    i+=1 
+
+# Now to imerge original scene with the new scene:
+i =0
+j=0
+concation_of_images3 = []
+while j <= 19199:
+    
+    while i <= 95: # 96 is number of sliced images in each image.
+        imgs = np.concatenate((images1_original3[i], images3[j]), axis=2)
+        concation_of_images3.append(imgs)
+        i+=1
+        j+=1 
+
+    i=0
+#file location of the images (orginal/new scene):
+col_dir4 = '//content/drive/MyDrive/canoe/input/*.jpg'
+col_depth_dir4 = '/content/drive/MyDrive/canoe/groundtruth/*.png'
+
+#creating a collection with the available images\depth images:
+col4 = imread_collection(col_dir4)
+col_depth4 = imread_collection(col_depth_dir4,cv2.IMREAD_GRAYSCALE) # the image origanly has 3 chaneel so i removed the 2 channel, to be compared in the model.
+
+# For changeing the dimension of the images to 64x64 as tranining data:
+    
+# image 0 is the original scene, the slicing will be seperate:  
+images1_original4 =[]    
+windows = sw.generate(col4[0], sw.DimOrder.HeightWidthChannel, 64, 0)
+for window in windows:
+    subset = col4[0][ window.indices() ]
+    images1_original4.append(subset)   
+    
+# new scene
+images4 = []
+i = 1
+while i <= 200:
+    windows = sw.generate(col4[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    for window in windows:
+        subset = col4[i][ window.indices() ]
+        images4.append(subset)
+    i+=1
+
+# For chnging the depth images to 4096 as testing data: 
+images1_depth4 = []
+i = 0
+while i <= 199:
+    windows = sw.generate(col_depth4[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    
+    for window in windows:
+        subset = col_depth4[i][ window.indices() ]
+        # binary = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)[1]
+        ravel= np.ravel(subset)
+        images1_depth4.append(ravel)
+    i+=1 
+
+  
+
+
+
+# Now to imerge original scene with the new scene:
+i =0
+j=0
+concation_of_images4 = []
+while j <= 3999:
+    
+    while i <= 19: # 96 is number of sliced images in each image.
+        imgs = np.concatenate((images1_original4[i], images4[j]), axis=2)
+        concation_of_images4.append(imgs)
+        i+=1
+        j+=1 
+
+    i=0
+#file location of the images (orginal/new scene):
+col_dir5 = '//content/drive/MyDrive/sofa/input/*.jpg'
+col_depth_dir5 = '/content/drive/MyDrive/sofa/groundtruth/*.png'
+
+#creating a collection with the available images\depth images:
+col5 = imread_collection(col_dir5)
+col_depth5 = imread_collection(col_depth_dir5,cv2.IMREAD_GRAYSCALE) # the image origanly has 3 chaneel so i removed the 2 channel, to be compared in the model.
+
+# For changeing the dimension of the images to 64x64 as tranining data:
+    
+# image 0 is the original scene, the slicing will be seperate:  
+images1_original5 =[]    
+windows = sw.generate(col5[0], sw.DimOrder.HeightWidthChannel, 64, 0)
+for window in windows:
+    subset = col5[0][ window.indices() ]
+    images1_original5.append(subset)   
+    
+# new scene
+images5 = []
+i = 1
+while i <= 200:
+    windows = sw.generate(col5[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    for window in windows:
+        subset = col5[i][ window.indices() ]
+        images5.append(subset)
+    i+=1
+
+# For chnging the depth images to 4096 as testing data: 
+images1_depth5 = []
+i = 0
+while i <= 199:
+    windows = sw.generate(col_depth5[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    
+    for window in windows:
+        subset = col_depth5[i][ window.indices() ]
+        # binary = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)[1]
+        ravel= np.ravel(subset)
+        images1_depth5.append(ravel)
+    i+=1 
+
+  
+
+
+
+# Now to imerge original scene with the new scene:
+i =0
+j=0
+concation_of_images5 = []
+while j <= 3999:
+    
+    while i <= 19: # 96 is number of sliced images in each image.
+        imgs = np.concatenate((images1_original5[i], images5[j]), axis=2)
+        concation_of_images5.append(imgs)
+        i+=1
+        j+=1 
+
+    i=0
+
+#file location of the images (orginal/new scene):
+col_dir6 = '/content/drive/MyDrive/blizard-test/input/*.jpg'
+col_depth_dir6 = '/content/drive/MyDrive/blizard-test/depth/*.png'
+
+#creating a collection with the available images\depth images:
+col6 = imread_collection(col_dir6)
+col_depth6 = imread_collection(col_depth_dir6,cv2.IMREAD_GRAYSCALE) # the image origanly has 3 chaneel so i removed the 2 channel, to be compared in the model.
+
+# For changeing the dimension of the images to 64x64 as tranining data:
+    
+# image 0 is the original scene, the slicing will be seperate:  
+images1_original6 =[]    
+windows = sw.generate(col6[0], sw.DimOrder.HeightWidthChannel, 64, 0)
+for window in windows:
+    subset = col6[0][ window.indices() ]
+    images1_original6.append(subset)   
+    
+# new scene
+images6 = []
+i = 1
+while i <= 100:
+    windows = sw.generate(col6[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    for window in windows:
+        subset = col6[i][ window.indices() ]
+        images6.append(subset)
+    i+=1
+
+# For chnging the depth images to 4096 as testing data: 
+images1_depth6 = []
+i = 0
+while i <= 99:
+    windows = sw.generate(col_depth6[i], sw.DimOrder.HeightWidthChannel, 64, 0)
+    
+    for window in windows:
+        subset = col_depth6[i][ window.indices() ]
+        # binary = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)[1]
+        ravel= np.ravel(subset)
+        images1_depth6.append(ravel)
+    i+=1 
+    
+# Now to imerge original scene with the new scene:
+i =0
+j=0
+concation_of_images6 = []
+while j <= 9599:
+    
+    while i <= 95: # 96 is number of sliced images in each image.
+        imgs = np.concatenate((images1_original6[i], images6[j]), axis=2)
+        concation_of_images6.append(imgs)
+        i+=1
+        j+=1 
+
+    i=0
+# change the data shape to be applied in the model
+A1 = np.array(concation_of_images1 + concation_of_images2 + concation_of_images3 + concation_of_images4 + concation_of_images5 )
+B1= np.array(images1_depth1 + images1_depth2 + images1_depth3 + images1_depth4 + images1_depth5 , dtype=bool)
+A2 = np.array(concation_of_images6 ),
+B2 = np.array(images1_depth6 , dtype=bool)
+
+
+#seed = 30
+#np.random.seed = seed
+
+# Seed value
+seed_value= 10
+
+import os
+os.environ['PYTHONHASHSEED']=str(seed_value)
+import random
+random.seed=seed_value
+import numpy as np
+np.random.seed = seed_value
+import tensorflow as tf
+tf.random.set_seed =seed_value 
+
+
+IMG_WIDTH =64
+IMG_HEIGHT =64
+IMG_CHANNELS =6
+
+
+#Build the model
+inputs = tf.keras.layers.Input((IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS))
+
+#intger to float
+s = tf.keras.layers.Lambda(lambda x: x / 255)(inputs)
+
+# kernel_initializer='he_normal'
+#use_bias=True, kernel_initializer='glorot_uniform'
+#Contraction path
+c1 = tf.keras.layers.Conv2D(24, (3, 3), activation='relu', padding='same', kernel_initializer='orthogonal')(s)
+p1 = tf.keras.layers.MaxPooling2D((2, 2))(c1)
+d1 = tf.keras.layers.Dropout(0.1)(p1)
+
+c2 = tf.keras.layers.Conv2D(48, (3, 3), activation='relu', padding='same', kernel_initializer='orthogonal')(p1)
+p2 = tf.keras.layers.MaxPooling2D((2, 2))(c2)
+d2 = tf.keras.layers.Dropout(0.1)(p2)
+ 
+c3 = tf.keras.layers.Conv2D(96, (3, 3), activation='relu', padding='same', kernel_initializer='orthogonal')(p2)
+p3 = tf.keras.layers.MaxPooling2D((2, 2))(c3)
+d3 = tf.keras.layers.Dropout(0.1)(p3)
+ 
+c4 = tf.keras.layers.Conv2D(96, (3, 3), activation='relu', padding='same', kernel_initializer='orthogonal')(p3)
+p4 = tf.keras.layers.MaxPooling2D((2, 2))(c4)
+d4 = tf.keras.layers.Dropout(0.1)(p4)
+
+f = tf.keras.layers.Flatten(data_format=None)(p4)
+n = tf.keras.layers.BatchNormalization()(f)
+d = tf.keras.layers.Dropout(0.1)(n)
+outputs = tf.keras.layers.Dense(4096, activation='sigmoid')(d)
+
+model = Model(inputs=[inputs], outputs=[outputs])
+
+opt1 = 'adam'
+opt2 = tf.keras.optimizers.SGD(learning_rate= 0.001, momentum=0.9)
+model.compile(optimizer= opt1 , loss='binary_crossentropy', metrics=['accuracy'])
+model.summary()
+
+# module chick point:
+# chechpointer = tf.keras.callbacks.ModelCheckpoint('model_for_nuclei.5h', verbose =1, save_best_only=True)
+
+# callbacks = [tf.keras.callbacks.EarlyStopping(patience=2, monitor='val_loss'),
+#              tf.keras.callbacks.TensorBoard(log_dir= 'logs')]
+
+#model.fit(A1,B1,validation_split=0.2,,epochs=80,shuffle=False)#, callbacks= callbacks)
+history = model.fit(A1,B1,validation_data=(A2,B2),batch_size=32,epochs=100,shuffle=True)#, callbacks= callbacks)validation_data=(A2,B2)
+
+
+model.save('/content/drive/MyDrive/my_model') 
+
+score, acc = model.evaluate(A2, B2,
+                            batch_size=size)
+print('Test score:', score)
+print('Test accuracy:', acc)
+
+
+# plot val-accurcy and accuracy, loss and val-loss
+from matplotlib import pyplot as plt
+
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+epochs = range(1, len(loss)+1)
+plt.plot(epochs, loss, 'y', label='traning loss')
+plt.plot(epochs, val_loss, 'r', label='validation loss')
+plt.title('traning and validation loss')
+plt.ylabel('loss')
+plt.xlabel('epochs')
+plt.legend()
+plt.show()
+
+
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+plt.plot(epochs, acc, 'y', label='traning acc')
+plt.plot(epochs, val_acc, 'r', label='validation acc')
+plt.title('traning and validation acc')
+plt.ylabel('acc')
+plt.xlabel('epochs')
+plt.legend()
+plt.show()
