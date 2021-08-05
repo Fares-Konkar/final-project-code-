@@ -1,0 +1,111 @@
+from skimage.io import imread_collection
+import numpy as np
+import cv2 
+import slidingwindow as sw
+import tensorflow as tf
+from tensorflow import keras
+
+# load orginal scene (image) / the new scene (image):
+original_scene = cv2.resize(cv2.imread(r'D:\Desktop2\Test-Project\cnn\data\badWeather\blizzard\input\in000001.jpg'),(640,480)) # your image path
+new_scene = cv2.resize(cv2.imread(r'D:\Desktop2\Test-Project\cnn\data\badWeather\blizzard\input\in000900.jpg'),(640,480))  # your image path
+
+# split the images to 64x64 with 3 channel: 
+windows = sw.generate(original_scene, sw.DimOrder.HeightWidthChannel, 64, 0)
+imag1 = []
+for window in windows:
+    subset = original_scene[ window.indices() ]
+    imag1.append(subset)
+    
+windows = sw.generate(new_scene, sw.DimOrder.HeightWidthChannel, 64, 0)
+imag2 = []
+for window in windows:
+    subset = new_scene[ window.indices() ]
+    imag2.append(subset)
+
+# concation of the two images to used for the prediction (64x64x6):
+i =0
+the_sum = []
+
+while i <= len(imag1)-1:
+    im4 = np.concatenate((imag1[i], imag2[i]), axis=2) # the concation is depth wise
+    the_sum.append(im4)
+    i+=1  
+    
+concation = np.array(the_sum)
+
+# cv2.imshow('Image', original_scene)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+
+# cv2.imshow('Image', new_scene)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+
+
+#concation1 = np.array(concation, dtype=bool)
+
+
+
+# load the deeplearning model:
+
+model = tf.keras.models.load_model('my_model')
+
+# To show the result (as an image): 
+prediction = model.predict(concation)
+d = [8,16,24,32,40,48,56,64,72,80] 
+j = 0
+i = 1
+current0 = np.array(prediction[0])
+resazied0 = current0.ravel()
+reshaped_to_2d0 = np.reshape(resazied0, (64,64))
+predicted_image= reshaped_to_2d0
+predictor = []
+
+while i <= 79:
+    if i % d[j] == 0:
+        predictor.append(predicted_image)
+        current_new = np.array(prediction[i])
+        resazied_new = current_new.ravel()
+        reshaped_to_2d_new = np.reshape(resazied_new, (64,64))
+        predicted_image= reshaped_to_2d_new   
+        j+=1
+        i+=1
+    else:
+        current = np.array(prediction[i])
+        resazied = current.ravel()
+        reshaped_to_2d = np.reshape(resazied, (64,64))
+        predicted_image = np.vstack((predicted_image, reshaped_to_2d))
+        i +=1
+predictor.append(predicted_image)
+the_reslt = np.array(np.hstack((predictor)))
+
+cv2.imshow('2',the_reslt)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+
+
+
+result2 = the_reslt
+result2[result2 <= 0.9] = 0
+result2[result2 > 0.9] = 255
+
+cv2.imshow('Image', result2)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+thresh_image = result2.astype(np.uint8)
+ret, thresh = cv2.threshold(thresh_image, 127, 255, 0)
+contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
+i=0
+while i < len(contours):
+    x,y,w,h = cv2.boundingRect(contours[i])
+    # h=int(h*0.9)
+    #w=int(w*0.75)
+    if (h >= 30) or (w >= 20):
+        cv2.rectangle(new_scene,(x,y),(x+w,y+h),(0,255,0),2)
+    i+=1
+    
+cv2.imshow('Image', new_scene)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
